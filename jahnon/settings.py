@@ -61,19 +61,9 @@ DATABASE_URL = os.getenv('DATABASE_URL', '')
 _db_url = DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
 
 if _db_url:
-    from urllib.parse import urlparse
-    url = urlparse(_db_url)
+    import dj_database_url
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': url.path[1:],
-            'USER': url.username,
-            'PASSWORD': url.password,
-            'HOST': url.hostname,
-            'PORT': url.port or 5432,
-            'CONN_MAX_AGE': 600,           # Keep DB connections alive for 10 min
-            'CONN_HEALTH_CHECKS': True,    # Verify connection is alive before using it
-        }
+        'default': dj_database_url.parse(_db_url, conn_max_age=600, conn_health_checks=True)
     }
 else:
     DATABASES = {
