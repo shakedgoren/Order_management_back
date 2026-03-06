@@ -78,6 +78,13 @@ if _db_url:
     else:
         host = host_port
         port = '5432'
+        
+    # FIX for Supabase + Render IPv6 blocks:
+    # Supabase uses IPv6 for port 5432 natively. Render blocks IPv6 out.
+    # Therefore, if connecting to Supabase on 5432, we automatically switch 
+    # to the IPv4 transaction pooler port (6543).
+    if 'supabase.co' in host and port == '5432':
+        port = '6543'
 
     DATABASES = {
         'default': {
