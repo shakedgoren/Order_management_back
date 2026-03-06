@@ -61,9 +61,35 @@ DATABASE_URL = os.getenv('DATABASE_URL', '')
 _db_url = DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
 
 if _db_url:
-    import dj_database_url
+    # Custom robust parser to handle Supabase passwords which often contain '@' or other special chars
+    # without failing strict urllib IP validations
+    _url = _db_url.replace('postgresql://', '')
+    credentials, host_info = _url.rsplit('@', 1)
+    user, password = credentials.split(':', 1)
+    
+    if '/' in host_info:
+        host_port, dbname = host_info.split('/', 1)
+    else:
+        host_port = host_info
+        dbname = ''
+        
+    if ':' in host_port:
+        host, port = host_port.split(':', 1)
+    else:
+        host = host_port
+        port = '5432'
+
     DATABASES = {
-        'default': dj_database_url.parse(_db_url, conn_max_age=600, conn_health_checks=True)
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': dbname,
+            'USER': user,
+            'PASSWORD': password,
+            'HOST': host,
+            'PORT': port,
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
+        }
     }
 else:
     DATABASES = {
