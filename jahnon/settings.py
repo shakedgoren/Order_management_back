@@ -61,28 +61,20 @@ DATABASE_URL = os.getenv('DATABASE_URL', '')
 _db_url = DATABASE_URL.replace('postgresql+asyncpg://', 'postgresql://')
 
 if _db_url:
-    import re
-    m = re.match(r'postgresql://([^:]+):([^@]+)@([^/]+)/(.+)', _db_url)
-    if m:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': m.group(4),
-                'USER': m.group(1),
-                'PASSWORD': m.group(2),
-                'HOST': m.group(3).split(':')[0] if ':' in m.group(3) else m.group(3),
-                'PORT': m.group(3).split(':')[1] if ':' in m.group(3) else '5432',
-                'CONN_MAX_AGE': 600,           # Keep DB connections alive for 10 min (avoid reconnect overhead)
-                'CONN_HEALTH_CHECKS': True,    # Verify connection is alive before using it
-            }
+    from urllib.parse import urlparse
+    url = urlparse(_db_url)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': url.path[1:],
+            'USER': url.username,
+            'PASSWORD': url.password,
+            'HOST': url.hostname,
+            'PORT': url.port or 5432,
+            'CONN_MAX_AGE': 600,           # Keep DB connections alive for 10 min
+            'CONN_HEALTH_CHECKS': True,    # Verify connection is alive before using it
         }
-    else:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+    }
 else:
     DATABASES = {
         'default': {
